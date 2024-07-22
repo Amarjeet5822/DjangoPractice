@@ -65,4 +65,48 @@ class LogoutView(APIView):
         response.status = status.HTTP_200_OK
         response.delete_cookie('jwt')
         return response
+
+class PostListView(APIView):
+
+    def get(self,reqeust):
+        blogs = Post.objects.all()
+        serializer = PostSerializer(blogs,many=True)
+        return Response(serializer.data)
+    
+    def post(self,request):
+        request.data['creator']= request.creator.id
+        serializer = PostSerializer(data = request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'msg':'Post added'},status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+        
+class PostDetailView(APIView):
+    def getObject(self,pk):
+        try :
+            blog = Post.objects.get(id=pk)
+            return blog
+        except Post.DoesNotExist :
+            return Response({'message': 'Blog not Exist!!'})
+
+
+    def get(self,request,pk):
+        blog = self.getObject(pk)
+        serializer = PostSerializer(blog)
+        return Response( serializer.data)
+    
+    def put(self,request,pk):
+        blog = self.getObject(pk)
+        serializer = PostSerializer(blog,data = request.data,partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'msg':'Post Updated'},status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+        
+    def delete(self,request,pk):
+        blog = self.getObject(pk)
+        blog.delete()
+        return Response({'message': 'Post Deleted!!'})
     
